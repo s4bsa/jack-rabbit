@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Smooth Satellite Zoom (Crossfade)</title>
+<title>Where is my matcha?</title>
 <style>
   html, body { margin:0; height:100%; background:#000; overflow:hidden; }
   .stage {
@@ -15,7 +15,6 @@
     position:absolute;
     will-change: transform, opacity;
     transform-origin: 50% 50%;
-    /* Make each image render crisply while scaling */
     image-rendering: -webkit-optimize-contrast;
   }
   .hud {
@@ -27,9 +26,9 @@
 <body>
 <div class="stage" id="stage">
   <!-- Order: far (bottom) -> near (top). All same pixel dimensions. -->
-  <img class="layer" id="far"  src="far.jpg"  alt="" />
-  <img class="layer" id="mid"  src="mid.jpg"  alt="" />
-  <img class="layer" id="near" src="near.jpg" alt="" />
+  <img class="layer" id="far"  src="sjsu.jpg"  alt="" />
+  <img class="layer" id="mid"  src="academic.jpg"  alt="" />
+  <img class="layer" id="near" src="matcha.jpg" alt="" />
 </div>
 <div class="hud" id="hud">Zoom: 1.00</div>
 
