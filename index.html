@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Smooth Satellite Zoom (Crossfade)</title>
+<style>
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+  .stage {
+    position:fixed; inset:0;
+    display:grid; place-items:center;
+    touch-action: none; /* better touch zoom handling */
+  }
+  .layer {
+    position:absolute;
+    will-change: transform, opacity;
+    transform-origin: 50% 50%;
+    /* Make each image render crisply while scaling */
+    image-rendering: -webkit-optimize-contrast;
+  }
+  .hud {
+    position:fixed; left:12px; bottom:12px; color:#fff; font:12px/1.2 system-ui, sans-serif; opacity:.7;
+    background:rgba(0,0,0,.4); padding:6px 8px; border-radius:6px;
+  }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <!-- Order: far (bottom) -> near (top). All same pixel dimensions. -->
+  <img class="layer" id="far"  src="far.jpg"  alt="" />
+  <img class="layer" id="mid"  src="mid.jpg"  alt="" />
+  <img class="layer" id="near" src="near.jpg" alt="" />
+</div>
+<div class="hud" id="hud">Zoom: 1.00</div>
+
+<script>
+(() => {
+  const layers = [
+    { el: document.getElementById('far'),  start: 1.0, end: 2.0 }, // fully visible at low zoom
+    { el: document.getElementById('mid'),  start: 1.5, end: 3.0 },
+    { el: document.getElementById('near'), start: 2.5, end: 6.0 }  // takes over at high zoom
+  ];
+
+  // Fit the base image to viewport height (common size for all images)
+  function fitAllToViewport() {
+    const h = window.innerHeight;
+    layers.forEach(l => { l.el.style.height = h + 'px'; });
+  }
+  window.addEventListener('resize', fitAllToViewport);
+  fitAllToViewport();
+
+  let zoom = 1.0;          // continuous zoom value
+  let targetZoom = 1.0;    // for smooth easing
+  let panX = 0, panY = 0;  // pixels
+  let isPanning = false;
+  let lastX = 0, lastY = 0;
+
+  const hud = document.getElementById('hud');
+
+  // Wheel = zoom (centered on pointer)
+  window.addEventListener('wheel', (e) => {
+    const zoomFactor = Math.exp(-e.deltaY * 0.0012); // tweak feel here
+    const prev = targetZoom;
+    targetZoom = Math.min(6.0, Math.max(1.0, targetZoom * zoomFactor));
+    // Optional: pan towards pointer to mimic telescope focus
+    // (Keeps pointer position stable-ish during zoom)
+    const rect = document.body.getBoundingClientRect();
+    const cx = e.clientX - rect.width/2;
+    const cy = e.clientY - rect.height/2;
+    const k = (targetZoom/prev - 1);
+    panX -= cx * k;
+    panY -= cy * k;
+    e.preventDefault();
+  }, { passive:false });
+
+  // Drag to pan
+  window.addEventListener('pointerdown', (e) => {
+    isPanning = true; lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!isPanning) return;
+    panX += (e.clientX - lastX);
+    panY += (e.clientY - lastY);
+    lastX = e.clientX; lastY = e.clientY;
+  });
+  window.addEventListener('pointerup',   () => isPanning = false);
+  window.addEventListener('pointercancel',() => isPanning = false);
+
+  function lerp(a,b,t){ return a+(b-a)*t; }
+  function smoothStep(t){ return t*t*(3-2*t); }
+
+  function render() {
+    // ease zoom for smoothness
+    zoom = lerp(zoom, targetZoom, 0.12);
+    if (Math.abs(zoom - targetZoom) < 0.001) zoom = targetZoom;
+
+    // Apply transform & opacity per layer
+    layers.forEach((L, i) => {
+      // Scale: everyone scales together (same center)
+      const transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+      L.el.style.transform = transform;
+
+      // Crossfade logic between neighbors based on L.start..L.end
+      // Below L.start => 0 opacity; above L.end => 1 opacity; between => interpolate
+      let a = 0;
+      if (zoom <= L.start) a = 0;
+      else if (zoom >= L.end) a = 1;
+      else {
+        let t = (zoom - L.start) / (L.end - L.start);
+        a = smoothStep(t);
+      }
+
+      // Make sure lower level fades out as higher fades in:
+      // For the bottom-most layer, opacity is 1 until mid takes over, etc.
+      L.el.style.opacity = a;
+    });
+
+    hud.textContent = `Zoom: ${zoom.toFixed(2)}`;
+    requestAnimationFrame(render);
+  }
+  render();
+})();
+</script>
+</body>
+</html>
