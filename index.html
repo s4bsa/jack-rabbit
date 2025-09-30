@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>3-Image Smooth Zoom on Resize</title>
+<title>Where is my matcha?</title>
 <style>
   html, body { margin:0; height:100%; overflow:hidden; background:#000; }
   .stage { position:fixed; inset:0; }
@@ -28,16 +28,13 @@
 
 <script>
 (() => {
-  // Breakpoints
   const W_MAX = 1400;  // wide desktop → sjsu.jpg
   const W_MID = 900;   // mid range → academic.jpg blends in
   const W_MIN = 530;   // small phones → matcha.jpg dominates
 
-  // Global zoom across widths (reduced to avoid over-zoom on small screens)
   const Z_AT_WMAX = 1.0;
   const Z_AT_WMIN = 2.2; // was 2.8; lowered to keep images from looking stretched
 
-  // Per-layer scale trims (make matcha slightly smaller)
   const SCALE_FAR  = 1.00;
   const SCALE_MID  = 1.00;
   const SCALE_NEAR = 0.88; // reduce near layer size so it fits better
@@ -55,22 +52,17 @@
   function update() {
     const w = window.innerWidth;
 
-    // Continuous zoom factor
     const tZoom = clamp((w - W_MIN) / (W_MAX - W_MIN), 0, 1);
     const zoom = Z_AT_WMIN * (1 - tZoom) + Z_AT_WMAX * tZoom;
 
-    // Apply per-layer scale (matcha smaller)
     far.style.transform  = `scale(${zoom * SCALE_FAR})`;
     mid.style.transform  = `scale(${zoom * SCALE_MID})`;
     near.style.transform = `scale(${zoom * SCALE_NEAR})`;
 
-    // Crossfades (ensure sjsu.jpg fully visible at max)
-    // Far opacity: 1 at >= W_MAX, fades to 0 by W_MID
     const aFar  = smoothstep(W_MID, W_MAX, w);          // 1 → 0 as width decreases
     const aNear = 1 - smoothstep(W_MIN, W_MID, w);      // 0 → 1 as width decreases
     let   aMid  = clamp(1 - aFar - aNear, 0, 1);        // fills middle band
 
-    // Snap exact edges to avoid rounding artifacts
     const eps = 0.0001;
     const width = window.innerWidth;
     far.style.opacity  = (width >= W_MAX - eps) ? 1 : aFar.toFixed(3);
