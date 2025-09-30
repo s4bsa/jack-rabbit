@@ -1,42 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Telescope Zoom</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>3-Image Smooth Zoom on Resize</title>
 <style>
-  html, body {
-    margin: 0;
-    height: 100%;
-    overflow: hidden;
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; }
+  .stage { position:fixed; inset:0; }
+  .layer {
+    position:absolute; inset:0;
+    width:100vw; height:100vh;
+    object-fit: cover;
+    object-position: 50% 50%;
+    will-change: transform, opacity;
+    transform-origin: 50% 50%;
+    transition: opacity 0.3s linear;
   }
-
-  body {
-    background: url('academic.jpg') no-repeat center center;
-    background-size: cover; /* will be overwritten by JS */
-    transition: background-size 0.2s ease-out; /* smooth zoom */
+  .hud {
+    position:fixed; left:10px; bottom:10px;
+    padding:6px 8px; border-radius:6px;
+    font:12px system-ui, sans-serif; color:#fff; background:rgba(0,0,0,.45);
+    user-select:none; pointer-events:none;
   }
 </style>
 </head>
 <body>
+  <div class="stage">
+    <!-- far -> mid -> near -->
+    <img id="imgFar"  class="layer" src="sjsu.jpg"    alt="">
+    <img id="imgMid"  class="layer" src="academic.jpg" alt="">
+    <img id="imgNear" class="layer" src="matcha.jpg"   alt="">
+  </div>
+  <div class="hud" id="hud"></div>
+
 <script>
-  function updateZoom() {
-    // Get current browser width
-    let width = window.innerWidth;
+(() => {
+  // Breakpoints (adjust if you want different handoffs)
+  const W_MAX = 1400;  // wide desktop → sjsu.jpg
+  const W_MID = 900;   // mid range → academic.jpg blends in
+  const W_MIN = 530;   // small phones → matcha.jpg dominates
 
-    // Map width to zoom level
-    // (smaller width = bigger zoom)
-    // Adjust these numbers to taste
-    let zoomPercent = Math.max(100, 400 - width / 5);
+  // Global zoom across widths
+  const Z_AT_WMAX = 1.0;
+  const Z_AT_WMIN = 2.8;
 
-    document.body.style.backgroundSize = zoomPercent + "%";
+  const far  = document.getElementById('imgFar');
+  const mid  = document.getElementById('imgMid');
+  const near = document.getElementById('imgNear');
+  const hud  = document.getElementById('hud');
+
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const smoothstep = (a, b, x) => {
+    const t = clamp((x - a) / (b - a), 0, 1);
+    return t * t * (3 - 2 * t);
+  };
+
+  function update() {
+    const w = window.innerWidth;
+
+    // Zoom factor
+    const tZoom = clamp((w - W_MIN) / (W_MAX - W_MIN), 0, 1);
+    const zoom = Z_AT_WMIN * (1 - tZoom) + Z_AT_WMAX * tZoom;
+    const transform = `scale(${zoom})`;
+    far.style.transform  = transform;
+    mid.style.transform  = transform;
+    near.style.transform = transform;
+
+    // Crossfades
+    const aFar  = smoothstep(W_MID, W_MAX, w);       // 1 → 0
+    const aNear = 1 - smoothstep(W_MIN, W_MID, w);   // 0 → 1
+    let   aMid  = clamp(1 - aFar - aNear, 0, 1);     // fill the middle
+
+    far.style.opacity  = aFar.toFixed(3);
+    mid.style.opacity  = aMid.toFixed(3);
+    near.style.opacity = aNear.toFixed(3);
+
+    hud.textContent = `width: ${w}px  |  zoom: ${zoom.toFixed(2)}  |  α: [sjsu ${aFar.toFixed(2)} | academic ${aMid.toFixed(2)} | matcha ${aNear.toFixed(2)}]`;
   }
 
-  // Run on load
-  updateZoom();
-
-  // Run on window resize
-  window.addEventListener("resize", updateZoom);
+  update();
+  window.addEventListener('resize', update);
+})();
 </script>
 </body>
 </html>
