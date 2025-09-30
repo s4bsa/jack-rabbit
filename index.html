@@ -5,39 +5,35 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Where is my matcha?</title>
 <style>
-  html, body { margin:0; height:100%; overflow:hidden; background:#000; }
-  .stage { position:fixed; inset:0; }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+  .stage { position:fixed; inset:0; background:#000; }
+
+  /* Each image fully fits inside the viewport, preserving aspect ratio. No cropping, no distortion. */
   .layer {
     position:absolute; inset:0;
     width:100vw; height:100vh;
-    object-fit: cover;
-    object-position: 50% 50%;
-    will-change: transform, opacity;
-    transform-origin: 50% 50%;
-    transition: opacity 0.3s linear;
+    object-fit: contain;       /* show entire image, letterbox if needed */
+    object-position: 50% 50%;  /* center */
+    transition: opacity 0.35s linear;
+    will-change: opacity;
+    opacity: 0;
   }
 </style>
 </head>
 <body>
   <div class="stage">
     <!-- far -> mid -> near -->
-    <img id="imgFar"  class="layer" src="sjsu.jpg"     alt="">
-    <img id="imgMid"  class="layer" src="academic.jpg" alt="">
-    <img id="imgNear" class="layer" src="matcha.jpg"   alt="">
+    <img id="imgFar"  class="layer" src="sjsu.jpg"     alt="far">
+    <img id="imgMid"  class="layer" src="academic.jpg" alt="mid">
+    <img id="imgNear" class="layer" src="matcha.jpg"   alt="near">
   </div>
 
 <script>
 (() => {
-  const W_MAX = 1400;  // wide desktop → sjsu.jpg
-  const W_MID = 900;   // mid range → academic.jpg blends in
-  const W_MIN = 530;   // small phones → matcha.jpg dominates
-
-  const Z_AT_WMAX = 1.0;
-  const Z_AT_WMIN = 2.2; // was 2.8; lowered to keep images from looking stretched
-
-  const SCALE_FAR  = 1.00;
-  const SCALE_MID  = 1.00;
-  const SCALE_NEAR = 0.88; // reduce near layer size so it fits better
+  // Breakpoints for crossfades (adjust to taste)
+  const W_MAX = 1400;  // >= this → fully sjsu.jpg
+  const W_MID = 900;   // mid range transition
+  const W_MIN = 530;   // <= this → fully matcha.jpg
 
   const far  = document.getElementById('imgFar');
   const mid  = document.getElementById('imgMid');
@@ -52,22 +48,14 @@
   function update() {
     const w = window.innerWidth;
 
-    const tZoom = clamp((w - W_MIN) / (W_MAX - W_MIN), 0, 1);
-    const zoom = Z_AT_WMIN * (1 - tZoom) + Z_AT_WMAX * tZoom;
+    // Opacity curves (no scaling)
+    const aFar  = smoothstep(W_MID, W_MAX, w);     // 1 at >= W_MAX → 0 by W_MID
+    const aNear = 1 - smoothstep(W_MIN, W_MID, w); // 0 at >= W_MID → 1 by <= W_MIN
+    let   aMid  = clamp(1 - aFar - aNear, 0, 1);   // fills the middle band
 
-    far.style.transform  = `scale(${zoom * SCALE_FAR})`;
-    mid.style.transform  = `scale(${zoom * SCALE_MID})`;
-    near.style.transform = `scale(${zoom * SCALE_NEAR})`;
-
-    const aFar  = smoothstep(W_MID, W_MAX, w);          // 1 → 0 as width decreases
-    const aNear = 1 - smoothstep(W_MIN, W_MID, w);      // 0 → 1 as width decreases
-    let   aMid  = clamp(1 - aFar - aNear, 0, 1);        // fills middle band
-
-    const eps = 0.0001;
-    const width = window.innerWidth;
-    far.style.opacity  = (width >= W_MAX - eps) ? 1 : aFar.toFixed(3);
+    far.style.opacity  = aFar.toFixed(3);
     mid.style.opacity  = aMid.toFixed(3);
-    near.style.opacity = (width <= W_MIN + eps) ? 1 : aNear.toFixed(3);
+    near.style.opacity = aNear.toFixed(3);
   }
 
   update();
