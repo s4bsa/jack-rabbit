@@ -1,2 +1,3 @@
-# telescope
-responsive art piece ~ zoom in and zoom out using your minimizing browser
+# Catch me if you can!
+Interactive art piece inspired by magicians, falling fruit, and point scoring.
+Name is based on Jack of All Trades and Jack Rabbit.
