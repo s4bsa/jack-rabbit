@@ -8,8 +8,9 @@
   <style>
     :root{
       --bg:#050505; /* near-black */
-      --accent:#ffd400; /* tarot yellow */
-      --muted:#bfa94a;
+      --accent:#ff3b3b; /* red */
+      --muted:#b36b6b; /* muted red */
+      --border: rgba(255, 59, 59, 0.15);
     }
     html,body{height:100%;}
     body{
@@ -24,15 +25,36 @@
       align-items:center;
     }
 
+    /* FAKE NAV */
+    .nav{
+      width:100%;
+      display:flex;
+      justify-content:center;
+      gap:16px;
+      padding:10px 12px 4px;
+      box-sizing:border-box;
+    }
+    .nav .chip{
+      padding:10px 14px;
+      border:1px solid var(--border);
+      border-radius:999px;
+      color:var(--accent);
+      background:transparent;
+      font-size:14px;
+      letter-spacing:1px;
+      text-transform:uppercase;
+      user-select:none;
+    }
+
     header{
       width:100%;
       text-align:center;
-      padding:28px 16px 8px;
+      padding:8px 16px 8px;
       box-sizing:border-box;
     }
 
     h1.title{
-      margin:0;
+      margin:6px 0 0 0;
       font-size:clamp(24px,4vw,48px);
       letter-spacing:4px;
       color:var(--accent);
@@ -50,29 +72,18 @@
       box-sizing:border-box;
     }
 
-    /* container for the p5 canvas so we can control sizing and keep it centered */
+    /* container for the p5 canvas */
     .canvas-wrap{
       width:min(1100px,95%);
-      max-width:1100px;
-      aspect-ratio: 16 / 9; /* gives a nice wide area for the mini-game */
+      aspect-ratio: 16 / 9; /* wide area for the game */
       display:grid;
       place-items:center;
-      background:linear-gradient(180deg, rgba(255,212,0,0.02), rgba(0,0,0,0.2));
-      border:1px solid rgba(255,212,0,0.06);
+      background:linear-gradient(180deg, rgba(255,59,59,0.02), rgba(0,0,0,0.2));
+      border:1px solid var(--border);
       border-radius:12px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       position:relative;
       overflow:hidden;
-    }
-
-    /* small caption below canvas */
-    .caption{
-      position:absolute;
-      bottom:8px;
-      right:12px;
-      font-size:12px;
-      color:var(--muted);
-      opacity:0.9;
     }
 
     footer{
@@ -83,31 +94,51 @@
       color:var(--muted);
     }
 
-    /* make sure p5 canvas scales nicely on small screens */
-    #defaultCanvas0{max-width:100% !important; height:auto !important;}
+    /* ensure p5 canvas scales nicely */
+    canvas[id^="defaultCanvas"]{max-width:100% !important; height:auto !important; display:block;}
   </style>
 </head>
 <body>
+  <nav class="nav" aria-label="Main">
+    <div class="chip">Home</div>
+    <div class="chip">Cards</div>
+    <div class="chip">Rules</div>
+    <div class="chip">About</div>
+  </nav>
+
   <header>
-    <h1 class="title">Arcana — A Minor Layout</h1>
+    <h1 class="title">Catch the Jack</h1>
   </header>
 
   <main>
-    <div class="canvas-wrap" id="canvasContainer">
-      <!-- p5 will insert the canvas here -->
-      <div class="caption">Click a card to draw / press 'R' to reset</div>
-    </div>
+    <div class="canvas-wrap" id="canvasContainer"></div>
   </main>
 
   <footer>
-    <small>Fake tarot layout • Colors: black & yellow • p5.js embedded</small>
+    <small>Fake tarot layout • Black & red theme • p5.js centered</small>
   </footer>
 
-  <iframe class="scaled-iframe" src="https://s4bsa.github.io/museum/Eagle"   
-      width="450" 
-      height="576" 
-      style="border:none;">  
-    </iframe>
-  
+  <!-- p5.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <!-- Your p5 sketch file. If it's on the same folder, name it sketch.js or update the path below. -->
+  <script src="sketch.js"></script>
+
+  <!-- Helper: if your sketch doesn't call parent('canvasContainer'), this moves the canvas into the box -->
+  <script>
+    (function(){
+      const containerId = 'canvasContainer';
+      function moveCanvasIn(){
+        const container = document.getElementById(containerId);
+        const canvas = document.querySelector('canvas[id^="defaultCanvas"]');
+        if(container && canvas && canvas.parentElement !== container){
+          container.appendChild(canvas);
+        }
+      }
+      const obs = new MutationObserver(moveCanvasIn);
+      obs.observe(document.body, {childList:true, subtree:true});
+      window.addEventListener('load', moveCanvasIn);
+      window.addEventListener('resize', moveCanvasIn);
+    })();
+  </script>
 </body>
 </html>
