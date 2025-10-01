@@ -1,66 +1,344 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Where is my matcha?</title>
-<style>
-  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
-  .stage { position:fixed; inset:0; background:#000; }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Arcana — Fake Tarot</title>
+  <!-- Google font (optional) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#050505; /* near-black */
+      --accent:#ffd400; /* tarot yellow */
+      --muted:#bfa94a;
+    }
+    html,body{height:100%;}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--accent);
+      font-family: 'Cinzel', serif;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
 
-  /* Each image fully fits inside the viewport, preserving aspect ratio. No cropping, no distortion. */
-  .layer {
-    position:absolute; inset:0;
-    width:100vw; height:100vh;
-    object-fit: contain;       /* show entire image, letterbox if needed */
-    object-position: 50% 50%;  /* center */
-    transition: opacity 0.35s linear;
-    will-change: opacity;
-    opacity: 0;
-  }
-</style>
+    header{
+      width:100%;
+      text-align:center;
+      padding:28px 16px 8px;
+      box-sizing:border-box;
+    }
+
+    h1.title{
+      margin:0;
+      font-size:clamp(24px,4vw,48px);
+      letter-spacing:4px;
+      color:var(--accent);
+      text-transform:uppercase;
+      text-shadow:0 2px 0 rgba(0,0,0,0.6);
+    }
+
+    main{
+      flex:1 1 auto;
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      box-sizing:border-box;
+    }
+
+    /* container for the p5 canvas so we can control sizing and keep it centered */
+    .canvas-wrap{
+      width:min(1100px,95%);
+      max-width:1100px;
+      aspect-ratio: 16 / 9; /* gives a nice wide area for the mini-game */
+      display:grid;
+      place-items:center;
+      background:linear-gradient(180deg, rgba(255,212,0,0.02), rgba(0,0,0,0.2));
+      border:1px solid rgba(255,212,0,0.06);
+      border-radius:12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* small caption below canvas */
+    .caption{
+      position:absolute;
+      bottom:8px;
+      right:12px;
+      font-size:12px;
+      color:var(--muted);
+      opacity:0.9;
+    }
+
+    footer{
+      width:100%;
+      text-align:center;
+      padding:12px 8px;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    /* make sure p5 canvas scales nicely on small screens */
+    #defaultCanvas0{max-width:100% !important; height:auto !important;}
+  </style>
 </head>
 <body>
-  <div class="stage">
-    <!-- far -> mid -> near -->
-    <img id="imgFar"  class="layer" src="sjsu.jpg"     alt="far">
-    <img id="imgMid"  class="layer" src="academic.jpg" alt="mid">
-    <img id="imgNear" class="layer" src="matcha.jpg"   alt="near">
-  </div>
+  <header>
+    <h1 class="title">Arcana — A Minor Layout</h1>
+  </header>
 
-<script>
-(() => {
-  // Breakpoints for crossfades (adjust to taste)
-  const W_MAX = 1400;  // >= this → fully sjsu.jpg
-  const W_MID = 900;   // mid range transition
-  const W_MIN = 530;   // <= this → fully matcha.jpg
+  <main>
+    <div class="canvas-wrap" id="canvasContainer">
+      <!-- p5 will insert the canvas here -->
+      <div class="caption">Click a card to draw / press 'R' to reset</div>
+    </div>
+  </main>
 
-  const far  = document.getElementById('imgFar');
-  const mid  = document.getElementById('imgMid');
-  const near = document.getElementById('imgNear');
+  <footer>
+    <small>Fake tarot layout • Colors: black & yellow • p5.js embedded</small>
+  </footer>
 
-  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const smoothstep = (a, b, x) => {
-    const t = clamp((x - a) / (b - a), 0, 1);
-    return t * t * (3 - 2 * t);
-  };
+  <!-- p5.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+  <script>
+    // Basic tarot-ish interactive using p5.js
+    // - shows 5 facedown cards in a row
+    // - click a card to "flip" it with animation revealing a placeholder arcana symbol
+    // - press R to reset (flip all back)
 
-  function update() {
-    const w = window.innerWidth;
+    const CARD_COUNT = 5;
+    let cards = [];
+    let canvasParent;
 
-    // Opacity curves (no scaling)
-    const aFar  = smoothstep(W_MID, W_MAX, w);     // 1 at >= W_MAX → 0 by W_MID
-    const aNear = 1 - smoothstep(W_MIN, W_MID, w); // 0 at >= W_MID → 1 by <= W_MIN
-    let   aMid  = clamp(1 - aFar - aNear, 0, 1);   // fills the middle band
+    function setup(){
+      canvasParent = document.getElementById('canvasContainer');
+      // create a canvas sized to the wrapper's size
+      const w = canvasParent.clientWidth;
+      const h = canvasParent.clientHeight;
+      const cnv = createCanvas(w, h);
+      cnv.parent('canvasContainer');
+      angleMode(DEGREES);
+      initCards();
+      window.addEventListener('resize', onResize);
+    }
 
-    far.style.opacity  = aFar.toFixed(3);
-    mid.style.opacity  = aMid.toFixed(3);
-    near.style.opacity = aNear.toFixed(3);
-  }
+    function onResize(){
+      const w = canvasParent.clientWidth;
+      const h = canvasParent.clientHeight;
+      resizeCanvas(w,h);
+      layoutCards();
+    }
 
-  update();
-  window.addEventListener('resize', update);
-})();
-</script>
+    function initCards(){
+      cards = [];
+      for(let i=0;i<CARD_COUNT;i++){
+        cards.push({
+          x:0,y:0,w:0,h:0,
+          flipped:false, // currently face-up
+          angle:0, // animation angle 0..180
+          target:0, // target angle
+          faceIndex: i // placeholder symbol index
+        });
+      }
+      layoutCards();
+    }
+
+    function layoutCards(){
+      const pad = min(width,height) * 0.06;
+      const totalW = width - pad*2;
+      const cardW = min(140, totalW / (CARD_COUNT + (CARD_COUNT-1)*0.15) );
+      const cardH = cardW * 1.6;
+      const gap = (totalW - cardW * CARD_COUNT) / (CARD_COUNT - 1);
+      const y = height/2 - cardH/2;
+      const startX = pad;
+      for(let i=0;i<CARD_COUNT;i++){
+        const c = cards[i];
+        c.w = cardW;
+        c.h = cardH;
+        c.x = startX + i*(cardW + gap);
+        c.y = y;
+      }
+    }
+
+    function draw(){
+      background(5);
+      // draw subtle stars / texture
+      drawNoisePattern();
+
+      // draw cards
+      for(let i=0;i<CARD_COUNT;i++){
+        drawCard(cards[i], i);
+      }
+
+      // update animation
+      for(let c of cards){
+        if(abs(c.angle - c.target) > 0.5){
+          // ease towards target
+          c.angle += (c.target - c.angle) * 0.2;
+        } else {
+          c.angle = c.target;
+        }
+      }
+    }
+
+    function drawCard(card, idx){
+      push();
+      translate(card.x + card.w/2, card.y + card.h/2);
+      // flip simulation: when angle < 90 show back, >90 show face
+      const a = card.angle % 360;
+      const scaleX = cos(a);
+      scale(scaleX,1);
+
+      // card base
+      noStroke();
+      // subtle card edge
+      fill(20);
+      rectMode(CENTER);
+      rect(0,0, card.w, card.h, 8);
+
+      if(abs(a) < 90){
+        // back design
+        fill(0);
+        rect(0,0, card.w - 6, card.h - 6, 6);
+        // yellow mandala / simple pattern
+        stroke(255,212,0);
+        strokeWeight(2);
+        noFill();
+        ellipse(0,0, card.w*0.6, card.w*0.6);
+        line(0,-card.h*0.25,0,card.h*0.25);
+      } else {
+        // face design
+        fill(10);
+        rect(0,0, card.w - 6, card.h - 6, 6);
+        // placeholder arcana symbol
+        fill(255,212,0);
+        noStroke();
+        const s = card.w*0.18;
+        drawArcanaSymbol(card.faceIndex, 0, -card.h*0.06, s);
+
+        // title text on face
+        textAlign(CENTER,CENTER);
+        textSize(min(14, card.w*0.08));
+        textStyle(BOLD);
+        fill(255,212,0);
+        text('ARCANA '+(card.faceIndex+1), 0, card.h*0.36);
+      }
+
+      // card border highlight (thin)
+      noFill();
+      stroke(255,212,0,30);
+      strokeWeight(1);
+      rect(0,0, card.w, card.h, 8);
+
+      pop();
+
+      // faint hover effect (outside transformed space so visuals match clicks)
+      if(isMouseOverCard(card)){
+        push();
+        translate(card.x, card.y);
+        noFill();
+        stroke(255,212,0,30);
+        rect(0,0, card.w, card.h, 8);
+        pop();
+      }
+    }
+
+    function drawArcanaSymbol(i, x, y, s){
+      // simple shapes so each card looks distinct
+      push();
+      translate(x,y);
+      switch(i%6){
+        case 0:
+          // star
+          for(let a=0;a<5;a++){
+            rotate(72);
+            triangle(-s/2,-s*0.05,0,-s, s/2,-s*0.05);
+          }
+          break;
+        case 1:
+          // crescent moon
+          fill(255,212,0);
+          ellipse(-s*0.12,0,s*1.2,s*1.2);
+          fill(5);
+          ellipse(s*0.2,0,s*0.9,s*0.9);
+          break;
+        case 2:
+          // eye
+          ellipse(0,0,s*1.6,s);
+          fill(5);
+          ellipse(0,0,s*0.45,s*0.45);
+          break;
+        case 3:
+          // key
+          rect(-s*0.6,-s*0.05,s*1.1,s*0.12,3);
+          ellipse(s*0.55,0,s*0.35,s*0.35);
+          break;
+        case 4:
+          // mountain / triangle
+          triangle(-s,-s*0.8,0,s*0.6,s,s*0.6);
+          break;
+        case 5:
+          // sun
+          ellipse(0,0,s*1.1,s*1.1);
+          for(let a=0;a<8;a++){
+            rotate(45);
+            rect(s*0.6, -s*0.02, s*0.5, s*0.06, 2);
+          }
+          break;
+      }
+      pop();
+    }
+
+    function drawNoisePattern(){
+      // faint vignette
+      noFill();
+      for(let i=0;i<8;i++){
+        stroke(0,0,0, 12 + i*3);
+        strokeWeight(40 + i*6);
+        rect(width/2,height/2, width - i*30, height - i*30, 30);
+      }
+    }
+
+    function mousePressed(){
+      for(let i=0;i<cards.length;i++){
+        if(isMouseOverCard(cards[i])){
+          toggleCard(cards[i]);
+          return false; // prevent default p5 drag
+        }
+      }
+    }
+
+    function isMouseOverCard(card){
+      return (mouseX >= card.x && mouseX <= card.x + card.w && mouseY >= card.y && mouseY <= card.y + card.h);
+    }
+
+    function toggleCard(card){
+      if(card.target === 0){
+        // flip to face (animate to 180)
+        card.target = 180;
+        card.flipped = true;
+      } else {
+        card.target = 0;
+        card.flipped = false;
+      }
+    }
+
+    function keyPressed(){
+      if(key === 'r' || key === 'R'){
+        // reset all to facedown
+        for(let c of cards){
+          c.target = 0;
+          c.flipped = false;
+        }
+      }
+    }
+
+  </script>
 </body>
 </html>
