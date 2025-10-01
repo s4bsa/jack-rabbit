@@ -18,8 +18,6 @@
       background:var(--bg);
       color:var(--accent);
       font-family: 'Cinzel', serif;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
       display:flex;
       flex-direction:column;
       align-items:center;
@@ -74,23 +72,17 @@
 
     /* container for the iframe */
     .canvas-wrap{
-      width:min(1100px,95%);
-      aspect-ratio: 16 / 9; /* wide area for the game */
-      display:block;
+      display:flex;
+      align-items:center;
+      justify-content:center;
       background:linear-gradient(180deg, rgba(255,59,59,0.02), rgba(0,0,0,0.2));
       border:1px solid var(--border);
       border-radius:12px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
-      position:relative;
-      overflow:hidden;
+      box-shadow:0 8px 30px rgba(0,0,0,0.6);
+      padding:12px;
     }
-    /* make the iframe fully fill the box */
     .canvas-wrap iframe{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      border:0;
+      border:none;
     }
 
     footer{
@@ -116,7 +108,10 @@
 
   <main>
     <div class="canvas-wrap">
-      <iframe src="https://s4bsa.github.io/jack-rabbit/magic" title="Catch the Jack p5 game" allowfullscreen></iframe>
+      <iframe src="https://s4bsa.github.io/jack-rabbit/magic" 
+              width="420" 
+              height="680" 
+              style="border:none;"></iframe>
     </div>
   </main>
 
