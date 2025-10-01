@@ -72,18 +72,25 @@
       box-sizing:border-box;
     }
 
-    /* container for the p5 canvas */
+    /* container for the iframe */
     .canvas-wrap{
       width:min(1100px,95%);
       aspect-ratio: 16 / 9; /* wide area for the game */
-      display:grid;
-      place-items:center;
+      display:block;
       background:linear-gradient(180deg, rgba(255,59,59,0.02), rgba(0,0,0,0.2));
       border:1px solid var(--border);
       border-radius:12px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       position:relative;
       overflow:hidden;
+    }
+    /* make the iframe fully fill the box */
+    .canvas-wrap iframe{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      border:0;
     }
 
     footer{
@@ -93,9 +100,6 @@
       font-size:12px;
       color:var(--muted);
     }
-
-    /* ensure p5 canvas scales nicely */
-    canvas[id^="defaultCanvas"]{max-width:100% !important; height:auto !important; display:block;}
   </style>
 </head>
 <body>
@@ -111,34 +115,13 @@
   </header>
 
   <main>
-    <div class="canvas-wrap" id="canvasContainer"></div>
+    <div class="canvas-wrap">
+      <iframe src="https://s4bsa.github.io/jack-rabbit/magic" title="Catch the Jack p5 game" allowfullscreen></iframe>
+    </div>
   </main>
 
   <footer>
-    <small>Fake tarot layout • Black & red theme • p5.js centered</small>
+    <small>Catch the Jack • Follow the rules. or don't.</small>
   </footer>
-
-  <!-- p5.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-  <!-- Your p5 sketch file. If it's on the same folder, name it sketch.js or update the path below. -->
-  <script src="sketch.js"></script>
-
-  <!-- Helper: if your sketch doesn't call parent('canvasContainer'), this moves the canvas into the box -->
-  <script>
-    (function(){
-      const containerId = 'canvasContainer';
-      function moveCanvasIn(){
-        const container = document.getElementById(containerId);
-        const canvas = document.querySelector('canvas[id^="defaultCanvas"]');
-        if(container && canvas && canvas.parentElement !== container){
-          container.appendChild(canvas);
-        }
-      }
-      const obs = new MutationObserver(moveCanvasIn);
-      obs.observe(document.body, {childList:true, subtree:true});
-      window.addEventListener('load', moveCanvasIn);
-      window.addEventListener('resize', moveCanvasIn);
-    })();
-  </script>
 </body>
 </html>
