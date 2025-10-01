@@ -4,20 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Catch the Jack</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico"> 
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#050505;
-      --accent:#ff3b3b;
+      --bg:#050505; 
+      --accent:#ff3b3b; 
       --muted:#b36b6b;
       --border: rgba(255, 59, 59, 0.15);
     }
-    html,body{
-      height:100%;
-      margin:0;
-      overflow:hidden;
-    }
+    html,body{height:100%;}
     body{
+      margin:0;
       background:var(--bg);
       color:var(--accent);
       font-family: 'Cinzel', serif;
@@ -25,6 +23,7 @@
       flex-direction:column;
       align-items:center;
     }
+
     .nav{
       width:100%;
       display:flex;
@@ -44,12 +43,14 @@
       text-transform:uppercase;
       user-select:none;
     }
+
     header{
       width:100%;
       text-align:center;
       padding:8px 16px 8px;
       box-sizing:border-box;
     }
+
     h1.title{
       margin:6px 0 0 0;
       font-size:clamp(24px,4vw,48px);
@@ -58,15 +59,17 @@
       text-transform:uppercase;
       text-shadow:0 2px 0 rgba(0,0,0,0.6);
     }
+
     main{
       flex:1 1 auto;
       width:100%;
       display:flex;
       align-items:center;
       justify-content:center;
-      padding:12px;
+      padding:24px;
       box-sizing:border-box;
     }
+
     .canvas-wrap{
       display:flex;
       align-items:center;
@@ -75,23 +78,18 @@
       border:1px solid var(--border);
       border-radius:12px;
       box-shadow:0 8px 30px rgba(0,0,0,0.6);
-      padding:8px;
-      max-width:100%;
-      max-height:100%;
+      padding:12px;
     }
     .canvas-wrap iframe{
-      width:100%;
-      height:100%;
-      aspect-ratio:420/680;
       border:none;
     }
+
     footer{
       width:100%;
       text-align:center;
-      padding:8px;
+      padding:12px 8px;
       font-size:12px;
       color:var(--muted);
-      box-sizing:border-box;
     }
   </style>
 </head>
@@ -109,12 +107,15 @@
 
   <main>
     <div class="canvas-wrap">
-      <iframe src="https://s4bsa.github.io/jack-rabbit/magic" title="Catch the Jack p5 game"></iframe>
+      <iframe src="https://s4bsa.github.io/jack-rabbit/magic" 
+              width="420" 
+              height="680" 
+              style="border:none;"></iframe>
     </div>
   </main>
 
   <footer>
-    <small>Catch the Jack • Follow the rules • or don't.</small>
+    <small>Catch the Jack • Follow the rules. or don't.</small>
   </footer>
 </body>
 </html>
